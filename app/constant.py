@@ -1,8 +1,8 @@
 QUESTIONS = [
     {"key": "email", "question": 
-     "Hello! I’m TalentScout, your AI hiring assistant.  \n"
-     "To get started, could you please provide your email address? "
-     "Make sure it’s valid and hasn’t been used before."},
+    "Hello! I’m TalentScout, your AI hiring assistant.  \n"
+    "To get started, please provide your email address. "
+    "If you’ve used our service previously, you can enter the same email to retain your previously entered information in this chat session."},
     {"key": "full_name", "question": 
      "Great! Your profile is now created with the email provided.  \n"
      "Could you please tell me your full name?"},

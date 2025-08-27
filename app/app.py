@@ -3,6 +3,8 @@ import streamlit as st
 import google.generativeai as genai
 from dotenv import load_dotenv
 from constant import QUESTIONS
+from response import Response
+from prompt import Prompt
 from utils import is_valid_email, is_valid_phone
 
 load_dotenv()
@@ -80,20 +82,7 @@ if prompt := st.chat_input("Type your response here..."):
                 st.chat_message("assistant").write(next_question)
             else:
                 answers = st.session_state.answers
-                summary = (
-                    "Okay, here's a summary of the information gathered from the conversation between you and TalentScout, "
-                    "the AI hiring assistant:\n\n"
-                    "### Candidate Information:\n"
-                    f"- **Email:** {answers.get('email', 'N/A')}\n"
-                    f"- **Full Name:** {answers.get('full_name', 'N/A')}\n"
-                    f"- **Phone Number:** {answers.get('phone', 'N/A')} "
-                    "(Country code missing - needs clarification if not provided)\n"
-                    f"- **Years of Experience:** {answers.get('experience', 'N/A')} years\n"
-                    f"- **Previous Roles:** {answers.get('previous_role', 'N/A')}\n"
-                    f"- **Desired Position:** {answers.get('position', 'N/A')}\n"
-                    f"- **Preferred Location:** {answers.get('location', 'N/A')}\n"
-                    f"- **Tech Stack:** {answers.get('tech_stack', 'N/A')}\n"
-                )
+                summary = Response.summary_response(answers)
                 st.session_state.messages.append({"role": "assistant", "content": summary})
                 st.chat_message("assistant").write(summary)
 
@@ -114,23 +103,7 @@ if prompt := st.chat_input("Type your response here..."):
 
             try:
                 if model:
-                    tech_prompt = (
-                        "You are an AI hiring assistant. Generate exactly 5 **technical interview questions** "
-                        "tailored for the following candidate based on their details:\n"
-                        f"{st.session_state.answers}\n\n"
-                        "Requirements:\n"
-                        "- Adapt the difficulty and focus of the questions to the candidate's years of experience:\n"
-                        "   * Junior (0–2 years): focus on practical skills, fundamentals, and direct coding scenarios.\n"
-                        "   * Mid-level (3–5 years): include problem-solving, debugging, API design, and applied use of their tech stack.\n"
-                        "   * Senior (6+ years): emphasize system design, architecture, scalability, trade-offs, leadership, and advanced best practices.\n"
-                        "- If the candidate's current or previous role is **different from their desired role**, include questions that test their readiness to transition "
-                        "into the target role (e.g., Junior to Mid-level: more responsibility and independent problem-solving; Mid to Senior: leadership, architecture decisions).\n"
-                        "- Always use 'you' and 'your' in the questions (e.g., 'How would you...', 'Can you describe...').\n"
-                        "- Do NOT include explanations, reasoning, or commentary in brackets or otherwise.\n"
-                        "- Only output the questions as a numbered list (1 to 5).\n"
-                        "- Keep the questions concise, clear, and professional."
-                    )
-
+                    tech_prompt = Prompt.generate_tech_questions(st.session_state.answers)
                     response = model.generate_content(tech_prompt)
                     tech_questions = response.text if response else "⚠️ Could not generate questions."
                 else:
@@ -138,17 +111,14 @@ if prompt := st.chat_input("Type your response here..."):
             except Exception as e:
                 tech_questions = f"⚠️ Error generating questions: {str(e)}"
 
-            guide_msg = "To help you prepare, we've curated 5 technical questions that align closely with your profile and experience. These questions reflect what you’re most likely to encounter in interviews and will give you a head start in showcasing your skills effectively."
+            guide_msg = Prompt.tech_question_guide()
             st.session_state.messages.append({"role": "assistant", "content": guide_msg})
             st.chat_message("assistant").write(guide_msg)
             
             st.session_state.messages.append({"role": "assistant", "content": tech_questions})
             st.chat_message("assistant").write(tech_questions)
             
-            eng_msg = (
-                "Thank you for using our service. We’ll notify you via email if any opportunities matching your skill set become available.  \n"
-                "To end this session, you may type ‘exit’, ‘quit’ or ‘close chat’."
-            )
+            eng_msg = Prompt.tech_end_message()
             st.session_state.messages.append({"role": "assistant", "content": eng_msg})
             st.chat_message("assistant").write(eng_msg)
             
